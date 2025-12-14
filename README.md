@@ -15,3 +15,19 @@ You can check off bricks as you find them, and create multiple brick lists for d
 - **API Key Protection**: The Rebrickable API key is stored as an encrypted secret in Cloudflare and never exposed to the client
 - **Client Privacy**: All user data (brick lists, progress) is stored locally in browser localStorage - nothing is sent to any server
 - **HTTPS Only**: The app requires HTTPS (automatic on Cloudflare Pages) for camera API access
+
+## Local Development
+
+The app uses a Vite proxy to simulate the Cloudflare Pages Function locally:
+
+```bash
+# Install dependencies
+npm install
+
+# Run development server
+npm run dev
+```
+
+The proxy is configured in [vite.config.ts](vite.config.ts) to forward `/api/rebrickable/*` requests to the Rebrickable API with the API key. This works the same way as the Cloudflare Pages Function in production.
+
+**Note**: The API key in `vite.config.ts` is a fallback for local development. In production, it's stored securely in Cloudflare.
