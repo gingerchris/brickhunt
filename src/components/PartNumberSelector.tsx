@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getPartByNumber } from '../services/rebrickable';
+import { getPartByNumber, getPartColors } from '../services/rebrickable';
 import { addItemToBrickList } from '../services/storage';
 import { Part, Color } from '../types';
 
@@ -15,6 +15,9 @@ interface PartOption {
   loading: boolean;
   error: boolean;
   selected: boolean;
+  colors: Array<Color & { part_img_url: string; elements: string[] }>;
+  selectedColorId: number | null;
+  loadingColors: boolean;
 }
 
 export function PartNumberSelector({ partNumbers, listId, onClose }: PartNumberSelectorProps) {
@@ -35,6 +38,9 @@ export function PartNumberSelector({ partNumbers, listId, onClose }: PartNumberS
       loading: true,
       error: false,
       selected: true,
+      colors: [],
+      selectedColorId: null,
+      loadingColors: false,
     }));
     setParts(initialParts);
 
@@ -53,9 +59,35 @@ export function PartNumberSelector({ partNumbers, listId, onClose }: PartNumberS
               ...updated[index],
               part,
               loading: false,
+              loadingColors: true,
             };
             return updated;
           });
+
+          // Fetch available colors for this part
+          getPartColors(part.part_num)
+            .then(colors => {
+              setParts(prev => {
+                const updated = [...prev];
+                updated[index] = {
+                  ...updated[index],
+                  colors,
+                  selectedColorId: colors.length > 0 ? colors[0].id : null,
+                  loadingColors: false,
+                };
+                return updated;
+              });
+            })
+            .catch(() => {
+              setParts(prev => {
+                const updated = [...prev];
+                updated[index] = {
+                  ...updated[index],
+                  loadingColors: false,
+                };
+                return updated;
+              });
+            });
         })
         .catch(() => {
           setParts(prev => {
@@ -89,13 +121,33 @@ export function PartNumberSelector({ partNumbers, listId, onClose }: PartNumberS
     }));
   };
 
+  const updateColor = (index: number, colorId: number) => {
+    setParts(prev => {
+      const updated = [...prev];
+      updated[index] = {
+        ...updated[index],
+        selectedColorId: colorId,
+      };
+      return updated;
+    });
+  };
+
   const handleAddSelected = () => {
     parts.forEach(partOption => {
       if (partOption.selected && partOption.part) {
+        // Find the selected color
+        const selectedColor = partOption.colors.find(c => c.id === partOption.selectedColorId);
+        const color = selectedColor || defaultColor;
+
         addItemToBrickList(listId, {
           id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
           part: partOption.part,
-          color: defaultColor,
+          color: {
+            id: color.id,
+            name: color.name,
+            rgb: color.rgb,
+            is_trans: color.is_trans,
+          },
           quantity: quantities[partOption.partNumber] || 1,
           found: 0,
         });
@@ -131,11 +183,17 @@ export function PartNumberSelector({ partNumbers, listId, onClose }: PartNumberS
               <div className="part-preview">
                 {partOption.loading && <div className="spinner-small"></div>}
                 {partOption.error && <div className="error-icon">✗</div>}
-                {partOption.part?.part_img_url ? (
-                  <img src={partOption.part.part_img_url} alt={partOption.part.name} />
-                ) : (
-                  !partOption.loading && !partOption.error && <div className="no-image">No image</div>
-                )}
+                {(() => {
+                  // Show colored image if available
+                  const selectedColor = partOption.colors.find(c => c.id === partOption.selectedColorId);
+                  const imageUrl = selectedColor?.part_img_url || partOption.part?.part_img_url;
+
+                  return imageUrl ? (
+                    <img src={imageUrl} alt={partOption.part?.name || 'Part'} />
+                  ) : (
+                    !partOption.loading && !partOption.error && <div className="no-image">No image</div>
+                  );
+                })()}
               </div>
 
               <div className="part-info">
@@ -150,6 +208,28 @@ export function PartNumberSelector({ partNumbers, listId, onClose }: PartNumberS
                   <>
                     <strong>{partOption.part.name}</strong>
                     <span className="part-meta">Part #{partOption.part.part_num}</span>
+
+                    {partOption.loadingColors && (
+                      <span className="part-meta">Loading colors...</span>
+                    )}
+
+                    {!partOption.loadingColors && partOption.colors.length > 0 && (
+                      <div className="color-selector">
+                        <label htmlFor={`color-${partOption.partNumber}`}>Color:</label>
+                        <select
+                          id={`color-${partOption.partNumber}`}
+                          value={partOption.selectedColorId || ''}
+                          onChange={(e) => updateColor(index, parseInt(e.target.value))}
+                          className="color-select"
+                        >
+                          {partOption.colors.map(color => (
+                            <option key={color.id} value={color.id}>
+                              {color.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
                   </>
                 )}
               </div>

@@ -1,4 +1,4 @@
-import { LegoSet, SetPart, Part } from '../types';
+import { LegoSet, SetPart, Part, Color } from '../types';
 
 // Use our Cloudflare Pages Function proxy to keep the API key secure
 const API_BASE = '/api/rebrickable';
@@ -74,6 +74,30 @@ export async function searchParts(query: string): Promise<Part[]> {
     `/parts/?search=${encodeURIComponent(query)}`
   );
   return data.results;
+}
+
+export async function getPartColors(partNum: string): Promise<Array<Color & { part_img_url: string; elements: string[] }>> {
+  // Get all available colors for a specific part
+  const data = await fetchFromRebrickable<{
+    results: Array<{
+      color_id: number;
+      color_name: string;
+      num_sets: number;
+      num_set_parts: number;
+      part_img_url: string;
+      elements: string[];
+    }>
+  }>(`/parts/${encodeURIComponent(partNum)}/colors/`);
+
+  // Transform to Color objects with image URL
+  return data.results.map(result => ({
+    id: result.color_id,
+    name: result.color_name,
+    rgb: '000000', // RGB not provided by this endpoint
+    is_trans: result.color_name.toLowerCase().includes('trans'),
+    part_img_url: result.part_img_url,
+    elements: result.elements,
+  }));
 }
 
 export function extractSetNumberFromQR(qrData: string): string | null {
