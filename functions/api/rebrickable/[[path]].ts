@@ -15,6 +15,15 @@ export const onRequest: PagesFunction<Env> = async (context) => {
   // Construct the Rebrickable API URL
   const rebrickableUrl = `https://rebrickable.com/api/v3/lego/${pathSegments}${url.search}`;
 
+  // Log the request for debugging
+  console.log('[Rebrickable Proxy]', {
+    timestamp: new Date().toISOString(),
+    method: request.method,
+    clientUrl: url.pathname + url.search,
+    rebrickableUrl: rebrickableUrl,
+    hasApiKey: !!env.REBRICKABLE_API_KEY,
+  });
+
   try {
     const response = await fetch(rebrickableUrl, {
       method: request.method,
@@ -22,6 +31,13 @@ export const onRequest: PagesFunction<Env> = async (context) => {
         'Authorization': `key ${env.REBRICKABLE_API_KEY}`,
         'Accept': 'application/json',
       },
+    });
+
+    // Log the response status
+    console.log('[Rebrickable Proxy] Response:', {
+      status: response.status,
+      statusText: response.statusText,
+      ok: response.ok,
     });
 
     // Return the response with CORS headers
@@ -37,6 +53,11 @@ export const onRequest: PagesFunction<Env> = async (context) => {
       },
     });
   } catch (error) {
+    console.error('[Rebrickable Proxy] Error:', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+
     return new Response(JSON.stringify({
       error: 'Failed to fetch from Rebrickable API',
       details: error instanceof Error ? error.message : 'Unknown error'
