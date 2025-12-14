@@ -1,19 +1,11 @@
 import { LegoSet, SetPart, Part } from '../types';
 
-const API_BASE = 'https://rebrickable.com/api/v3/lego';
-
-function getApiKey(): string {
-  const key = import.meta.env.VITE_REBRICKABLE_API_KEY;
-  if (!key) {
-    throw new Error('VITE_REBRICKABLE_API_KEY not configured in .env file');
-  }
-  return key;
-}
+// Use our Cloudflare Pages Function proxy to keep the API key secure
+const API_BASE = '/api/rebrickable';
 
 async function fetchFromRebrickable<T>(endpoint: string): Promise<T> {
   const response = await fetch(`${API_BASE}${endpoint}`, {
     headers: {
-      'Authorization': `key ${getApiKey()}`,
       'Accept': 'application/json',
     },
   });

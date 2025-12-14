@@ -6,5 +6,5 @@ pages_build_output_dir = "dist"
 [env.production]
 name = "brickhunt"
 
-# Environment variables (set these in Cloudflare dashboard)
-# VITE_REBRICKABLE_API_KEY will be set as a secret
+# Environment variables (set these in Cloudflare dashboard as encrypted secrets)
+# REBRICKABLE_API_KEY - Your Rebrickable API key (server-side only, never exposed to client)

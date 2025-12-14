@@ -28,10 +28,13 @@ Your code is already on GitHub at `github.com:gingerchris/brickhunt.git`
 ### Step 3: Add Environment Variables
 
 1. In the Cloudflare Pages project settings, go to **Settings** → **Environment variables**
-2. Add the following variable:
-   - **Variable name**: `VITE_REBRICKABLE_API_KEY`
+2. Add the following variable (this will be kept secure on the server side):
+   - **Variable name**: `REBRICKABLE_API_KEY`
    - **Value**: `91279517834bc15097f38b7b523d71c0`
+   - **Type**: Secret (encrypted)
    - **Environment**: Both Production and Preview
+
+**Important**: Use `REBRICKABLE_API_KEY` (not `VITE_REBRICKABLE_API_KEY`) since we're using a server-side proxy to keep the key secure.
 
 ### Step 4: Deploy
 
@@ -67,10 +70,12 @@ npx wrangler pages project create brickhunt
 ### Step 4: Set Environment Variables
 
 ```bash
-npx wrangler pages secret put VITE_REBRICKABLE_API_KEY
+npx wrangler pages secret put REBRICKABLE_API_KEY
 ```
 
 When prompted, enter: `91279517834bc15097f38b7b523d71c0`
+
+**Note**: The API key is stored securely and never exposed to the client.
 
 ### Step 5: Deploy
 
@@ -95,12 +100,11 @@ npx wrangler pages deploy dist --project-name=brickhunt
 
 ### API Key Security
 
-- The Rebrickable API key is embedded in the client-side code
-- This is normal for free-tier API keys used in browser applications
-- The API key has rate limits built-in by Rebrickable
-- If you need more security, consider:
-  1. Using Cloudflare Workers to proxy API requests
-  2. Implementing server-side API calls
+- ✅ **The Rebrickable API key is kept secure on the server side**
+- The app uses Cloudflare Pages Functions to proxy API requests
+- Your API key is never exposed in the client-side JavaScript bundle
+- All API requests go through `/api/rebrickable/*` which is handled server-side
+- The key is stored as an encrypted environment variable in Cloudflare
 
 ### Automatic Deployments
 
