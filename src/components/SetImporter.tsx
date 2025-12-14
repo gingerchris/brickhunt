@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { QRScanner } from './QRScanner';
 import { extractSetNumberFromQR, getSetByNumber, getSetParts } from '../services/rebrickable';
 import { getBrickList, saveBrickList } from '../services/storage';
-import { SetPart } from '../types';
+import type { SetPart } from '../types';
+
 
 interface SetImporterProps {
   listId: string;
@@ -201,8 +202,16 @@ export function SetImporter({ listId, onClose }: SetImporterProps) {
   });
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content large" onClick={(e) => e.stopPropagation()}>
+    <div className="modal-overlay">
+      <div className="modal-content large">
+        <button
+          type="button"
+          className="visually-hidden close-modal-btn"
+          aria-label="Close modal"
+          onClick={onClose}
+          onKeyDown={e => { if (e.key === 'Escape') onClose(); }}
+          tabIndex={0}
+        />
         <div className="modal-header">
           <h2>Import from {setName}</h2>
           <button type="button" onClick={onClose} className="close-btn">✕</button>
@@ -237,40 +246,44 @@ export function SetImporter({ listId, onClose }: SetImporterProps) {
           )}
         </div>
 
-        <div className="parts-selection-list">
+        <div className="parts-selection-list parts-grid">
           {filteredParts.length === 0 ? (
             <div className="empty-state">
               <p>No parts match your search.</p>
             </div>
           ) : (
-            filteredParts.map(setPart => (
-              <label key={setPart.id} className="part-selection-item">
-                <input
-                  type="checkbox"
-                  checked={selectedParts.has(setPart.id)}
-                  onChange={() => togglePart(setPart.id)}
-                />
-                <div className="part-preview">
-                  {setPart.part.part_img_url ? (
-                    <img src={setPart.part.part_img_url} alt={setPart.part.name} />
-                  ) : (
-                    <div className="no-image">No image</div>
-                  )}
-                </div>
-                <div className="part-info">
-                  <strong>{setPart.part.name}</strong>
-                  <span className="part-meta">
-                    {setPart.part.part_num} - {setPart.color.name} (×{setPart.quantity})
-                  </span>
-                </div>
-              </label>
-            ))
+            filteredParts.map(setPart => {
+              const isActive = selectedParts.has(setPart.id);
+              return (
+                <button
+                  key={setPart.id}
+                  type="button"
+                  className={`part-selection-item part-card${isActive ? ' active' : ''}`}
+                  onClick={() => togglePart(setPart.id)}
+                  aria-pressed={isActive}
+                >
+                  <div className="part-preview large">
+                    {setPart.part.part_img_url ? (
+                      <img src={setPart.part.part_img_url} alt={setPart.part.name} />
+                    ) : (
+                      <div className="no-image">No image</div>
+                    )}
+                  </div>
+                  <div className="part-info">
+                    <strong>{setPart.part.name}</strong>
+                    <span className="part-meta">
+                      {setPart.part.part_num} - {setPart.color.name} (×{setPart.quantity})
+                    </span>
+                  </div>
+                </button>
+              );
+            })
           )}
         </div>
 
         <div className="modal-footer">
-          <button onClick={onClose} className="secondary-btn">Cancel</button>
-          <button onClick={handleImport} className="primary-btn">
+          <button type="button" onClick={onClose} className="secondary-btn">Cancel</button>
+          <button type="button" onClick={handleImport} className="primary-btn">
             Import {selectedParts.size} Parts
           </button>
         </div>
