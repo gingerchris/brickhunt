@@ -55,9 +55,10 @@ export async function getSetParts(setNum: string): Promise<SetPart[]> {
 }
 
 export async function getPartByNumber(partNum: string): Promise<Part> {
-  // Search by LEGO ID (the part number on the brick)
+  // Search by part number, element ID, or any identifier
+  // Using search parameter because it's more flexible than lego_id
   const data = await fetchFromRebrickable<{ results: Part[] }>(
-    `/parts/?lego_id=${encodeURIComponent(partNum)}`
+    `/parts/?search=${encodeURIComponent(partNum)}`
   );
 
   if (data.results.length === 0) {

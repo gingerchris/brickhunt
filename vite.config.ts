@@ -1,9 +1,14 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 
 // Development config with proxy to Rebrickable API
 // This simulates the Cloudflare Pages Function locally
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+  // Load env file based on `mode` in the current working directory.
+  // Set the third parameter to '' to load all env regardless of the `VITE_` prefix.
+  const env = loadEnv(mode, process.cwd(), '')
+
+  return {
   plugins: [react()],
   server: {
     proxy: {
@@ -13,9 +18,15 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api\/rebrickable/, ''),
         configure: (proxy, _options) => {
           proxy.on('proxyReq', (proxyReq, req, _res) => {
-            // Add API key from environment variable (for local dev only)
-            const apiKey = process.env.REBRICKABLE_API_KEY || '91279517834bc15097f38b7b523d71c0';
-            proxyReq.setHeader('Authorization', `key ${apiKey}`);
+            // Add API key from environment variable
+            const apiKey = env.REBRICKABLE_API_KEY;
+
+            if (!apiKey) {
+              console.error('\n❌ [Vite Proxy] REBRICKABLE_API_KEY not found in .env file!');
+              console.error('   Please create a .env file with: REBRICKABLE_API_KEY=your_key_here\n');
+            } else {
+              proxyReq.setHeader('Authorization', `key ${apiKey}`);
+            }
 
             // Log the outgoing request
             const targetUrl = `https://rebrickable.com/api/v3/lego${proxyReq.path}`;
@@ -53,4 +64,5 @@ export default defineConfig({
       },
     },
   },
+  }
 })
