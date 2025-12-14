@@ -1,0 +1,10 @@
+name = "brickhunt"
+compatibility_date = "2024-01-01"
+
+pages_build_output_dir = "dist"
+
+[env.production]
+name = "brickhunt"
+
+# Environment variables (set these in Cloudflare dashboard)
+# VITE_REBRICKABLE_API_KEY will be set as a secret
